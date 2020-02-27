@@ -1,0 +1,11 @@
+{
+	"name": "Template Pack",
+	"suits": {
+		"template": [
+			{
+				"name": "Card",
+				"text": "CARD!!!"
+			}
+		]
+	}
+}

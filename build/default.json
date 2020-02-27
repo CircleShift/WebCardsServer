@@ -1,0 +1,61 @@
+{
+	"name": "Default",
+	"suits": {
+		"diamonds": [
+			{ "name": "12", "text": "K" },
+			{ "name": "11", "text": "Q" },
+			{ "name": "10", "text": "J" },
+			{ "name": "9", "text": "9" },
+			{ "name": "8", "text": "8" },
+			{ "name": "7", "text": "7" },
+			{ "name": "6", "text": "6" },
+			{ "name": "5", "text": "5" },
+			{ "name": "4", "text": "4" },
+			{ "name": "3", "text": "3" },
+			{ "name": "2", "text": "2" },
+			{ "name": "1", "text": "1" }
+		],
+		"hearts": [
+			{ "name": "12", "text": "K" },
+			{ "name": "11", "text": "Q" },
+			{ "name": "10", "text": "J" },
+			{ "name": "9", "text": "9" },
+			{ "name": "8", "text": "8" },
+			{ "name": "7", "text": "7" },
+			{ "name": "6", "text": "6" },
+			{ "name": "5", "text": "5" },
+			{ "name": "4", "text": "4" },
+			{ "name": "3", "text": "3" },
+			{ "name": "2", "text": "2" },
+			{ "name": "1", "text": "1" }
+		],
+		"clubs": [
+			{ "name": "12", "text": "K" },
+			{ "name": "11", "text": "Q" },
+			{ "name": "10", "text": "J" },
+			{ "name": "9", "text": "9" },
+			{ "name": "8", "text": "8" },
+			{ "name": "7", "text": "7" },
+			{ "name": "6", "text": "6" },
+			{ "name": "5", "text": "5" },
+			{ "name": "4", "text": "4" },
+			{ "name": "3", "text": "3" },
+			{ "name": "2", "text": "2" },
+			{ "name": "1", "text": "1" }
+		],
+		"spades": [
+			{ "name": "12", "text": "K" },
+			{ "name": "11", "text": "Q" },
+			{ "name": "10", "text": "J" },
+			{ "name": "9", "text": "9" },
+			{ "name": "8", "text": "8" },
+			{ "name": "7", "text": "7" },
+			{ "name": "6", "text": "6" },
+			{ "name": "5", "text": "5" },
+			{ "name": "4", "text": "4" },
+			{ "name": "3", "text": "3" },
+			{ "name": "2", "text": "2" },
+			{ "name": "1", "text": "1" }
+		]
+	}
+}

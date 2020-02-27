@@ -1,0 +1,15 @@
+{
+	"name": "Not Working Pack",
+	"suits": {
+		"wheretheerroris": [
+			"card1": {
+				"name": "errornocomma"
+				"text": "no,"
+			}
+			card2: {
+				"name":"errornoquotes",
+				"text":"should be quotes around card2"
+			}
+		]
+	}
+}
