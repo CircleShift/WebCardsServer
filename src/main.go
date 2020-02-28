@@ -52,7 +52,7 @@ func main() {
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	go webcode.LobbyLoop(conchan, shutdown, &wg)
+	go webcode.HubLoop(conchan, shutdown, &wg)
 
 	http.HandleFunc("/", upgrade)
 
