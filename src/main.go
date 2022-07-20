@@ -34,6 +34,9 @@ func main() {
 	s := flag.String("setdir", "sets", "Set the directory to search for cardsets")
 	p := flag.Int("port", 4040, "Port for the websocket server to run on")
 	h := flag.String("host", "127.0.0.1", "Set the host to listen on")
+	sec := flag.Bool("tls", false, "Use HTTPS/WSS instead of HTTP/WS")
+	sec_c := flag.String("cert", "host.csr", "Cert file for tls")
+	sec_k := flag.String("key", "host.key", "Key file for tls")
 
 	flag.Parse()
 
@@ -56,7 +59,11 @@ func main() {
 
 	http.HandleFunc("/", upgrade)
 
-	log.Println(http.ListenAndServe(*h+":"+port, nil))
+	if *sec {
+		log.Println(http.ListenAndServeTLS(*h+":"+port, *sec_c, *sec_k, nil))
+	} else {
+		log.Println(http.ListenAndServe(*h+":"+port, nil))
+	}
 
 	close(shutdown)
 	wg.Wait()
