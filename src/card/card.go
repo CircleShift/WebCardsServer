@@ -2,7 +2,8 @@
 package card
 
 // Card represents a single card that a player can hold.
+// Data represents the text or images on the card, and is one to one with the server version.
 type Card struct {
 	Name string `json:"name"`
-	Text string `json:"text"`
+	Data interface{} `json:"data"`
 }

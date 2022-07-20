@@ -2,7 +2,6 @@ package card
 
 import (
 	"math/rand"
-	"time"
 )
 
 // RefDeck defines a deck of individual cards with no bearing on what pack each card belongs to.
@@ -13,15 +12,12 @@ type RefDeck struct {
 	Cards  []Ref
 	r      *rand.Rand
 	cardCt int
+	dups   int
 }
 
 // NewRefDeck creates a reference to a RefDeck based on card references and number of duplicates allowed in play.
-func NewRefDeck(c []Ref, dups uint) *RefDeck {
-	n := time.Now()
-	d := time.Date(n.Year()-(n.Year()%32), time.January, 0, 0, 0, 0, 0, time.Local)
-	rnd := rand.New(rand.NewSource(n.Sub(d).Nanoseconds()))
-
-	return &RefDeck{Cards: c, r: rnd, cardCt: len(c)}
+func NewRefDeck(c []Ref, d int) *RefDeck {
+	return &RefDeck{Cards: c, r: syncSafeRandom(), cardCt: len(c), dups: d}
 }
 
 // CardCount returns the number of cards in the RefDeck.

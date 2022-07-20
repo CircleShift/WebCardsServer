@@ -7,7 +7,21 @@ import (
 
 	"io/ioutil"
 	"os"
+	"sync"
+	"time"
+	"math/rand"
 )
+
+var (
+	rndSync sync.Mutex
+	rndSeed *rand.Rand
+)
+
+func syncSafeRandom() *rand.Rand {
+	rndSync.Lock()
+	defer rndSync.Unlock()
+	return rand.New(rand.NewSource(rndSeed.Int63()))
+}
 
 // packFromJSON takes a byte representation of json and attempts to convert it into a Pack object.
 func packFromJSON(dat []byte) (Pack, error) {
@@ -115,6 +129,10 @@ func InitCardPacks(packdir string) error {
 	}
 
 	Packs = p
+
+	n := time.Now()
+	d := time.Date(n.Year()-(n.Year()%32), time.January, 0, 0, 0, 0, 0, time.Local)
+	rndSeed = rand.New(rand.NewSource(n.Sub(d).Microseconds()))
 
 	return nil
 }

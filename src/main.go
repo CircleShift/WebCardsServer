@@ -50,7 +50,7 @@ func main() {
 
 	log.Println("Starting server on " + *h + ":" + port)
 
-	wg := sync.WaitGroup{}
+	var wg sync.WaitGroup
 	wg.Add(1)
 	go webcode.HubLoop(conchan, shutdown, &wg)
 
@@ -60,5 +60,4 @@ func main() {
 
 	close(shutdown)
 	wg.Wait()
-
 }

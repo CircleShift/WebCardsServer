@@ -11,5 +11,5 @@ type RecieveMessage struct {
 // SendMessage represents a json message to the websocket client
 type SendMessage struct {
 	Type string `json:"type"`
-	Data {}interface `json:"data"`
+	Data interface{} `json:"data"`
 }

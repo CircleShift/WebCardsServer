@@ -2,7 +2,6 @@ package card
 
 import (
 	"math/rand"
-	"time"
 )
 
 // Deck represents a deck of cards composed from one or more packs.
@@ -24,10 +23,6 @@ type Deck struct {
 // dups sets how many of the same card can be in play at once (-1 for infinite).
 // The Rand is initialized with a source dependent on the current time.
 func NewDeck(packs [](*Pack), dups uint) *Deck {
-	n := time.Now()
-	d := time.Date(n.Year()-(n.Year()%32), time.January, 0, 0, 0, 0, 0, time.Local)
-	rnd := rand.New(rand.NewSource(n.Sub(d).Nanoseconds()))
-
 	ct := int(0)
 
 	for i := range packs {
@@ -56,7 +51,7 @@ func NewDeck(packs [](*Pack), dups uint) *Deck {
 		}
 	}
 
-	return &Deck{Packs: packs, r: rnd, cardCt: ct, suits: suits}
+	return &Deck{Packs: packs, r: syncSafeRandom(), cardCt: ct, suits: suits}
 }
 
 // GetPack returns a pack based on it's name.
