@@ -25,6 +25,7 @@ func upgrade(r http.ResponseWriter, c *http.Request) {
 
 	if err != nil {
 		log.Println(err.Error())
+		return
 	}
 
 	conchan <- client
@@ -39,6 +40,10 @@ func main() {
 	sec_k := flag.String("key", "host.key", "Key file for tls")
 
 	flag.Parse()
+
+	up.CheckOrigin = func(r *http.Request) bool {
+		return true
+	}
 
 	err := card.InitCardPacks(*s)
 

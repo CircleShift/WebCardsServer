@@ -5,7 +5,35 @@ import (
 	"log"
 	"strconv"
 	"sync"
+	"time"
 )
+
+const MAX_PLAYERS = 1000
+
+var (
+	plcSync sync.Mutex
+	plc int = 0
+)
+
+func addPlayer() bool {
+	defer plcSync.Unlock()
+	plcSync.Lock()
+
+	if plc == MAX_PLAYERS {
+		return false
+	}
+	plc += 1
+	return true
+}
+
+func delPlayer() {
+	plcSync.Lock()
+	if plc <= 0 {
+		plc = 1
+	}
+	plc -= 1
+	plcSync.Unlock()
+}
 
 // HubLoop waits for either a shutdown signal or a new connection from a websocket through conchan.
 // When a new *Conn is sent, LobbyLoop creates a new goroutine on lobby and adds one to wg.
@@ -15,8 +43,12 @@ func HubLoop(conchan <-chan *websocket.Conn, shutdown <-chan bool, wg *sync.Wait
 	for {
 		select {
 		case conn := <-conchan:
-			wg.Add(1)
-			go lobby(conn, shutdown, wg)
+			wg.Add(3)
+			
+			if addPlayer() {
+				go lobby(initAsyncWS(conn, shutdown, wg), wg)
+			}
+
 		case <-shutdown:
 			return
 		}
@@ -24,18 +56,17 @@ func HubLoop(conchan <-chan *websocket.Conn, shutdown <-chan bool, wg *sync.Wait
 }
 
 // validates websocket connection.
-func handshake(conn *websocket.Conn) bool {
-	var m RecieveMessage
-	err := conn.ReadJSON(&m)
+func handshake(msg RecieveMessage) bool {
 
-	if err != nil || m.Type != "version" {
+	if msg.Type != "version" {
+		log.Println("Not a version.")
 		return false
 	}
 
-	i, err := strconv.Atoi(m.Data)
+	i, err := strconv.Atoi(msg.Data)
 
-	if err != nil || i < 1 || i > 1 {
-		conn.WriteJSON(SendMessage{Type: "verr", Data: ""})
+	if err != nil || i != 1 {
+		log.Println(i)
 		return false
 	}
 
@@ -45,35 +76,36 @@ func handshake(conn *websocket.Conn) bool {
 // lobby is the hub for a websocket client. A client goes to lobby on connection.
 // Once a client closes or errors, lobby exits.
 // lobby calls wg.Done() on exit
-func lobby(conn *websocket.Conn, shutdown <-chan bool, wg *sync.WaitGroup) {
+// Only write to a conn in this group
+func lobby(async AsyncWS, wg *sync.WaitGroup) {
 	defer wg.Done()
+	defer delPlayer()
+	defer log.Println("Exit lobby")
 
-	if !handshake(conn) {
-		log.Println("Handshake error, closing connection.")
-		conn.Close()
-		return
+	// First msg should be a handshake
+	select {
+	case msg, _ := (<-async.I):
+		if !handshake(msg) {
+			log.Println("Handshake error, closing connection.")
+			return
+		}
+	case <-time.After(time.Second * 1):
+		async.close()
 	}
+	
+	log.Println("Connection ok")
+	async.O <- SendMessage{"ready", ""}
 
-	var m RecieveMessage
-	for {
-		err := conn.ReadJSON(&m)
-		if err != nil {
-			log.Println("Error reading JSON, closing conn.")
-			conn.Close()
-			return
-		}
-
-		switch m.Type {
-		case "games":
-		}
-
+	// Todo: fix
+	//game_id := ""
+	for ;; {
 		select {
-		case <-shutdown:
-			conn.Close()
-			return
+		case _, ok := <-async.I:
+			if !ok {
+				return
+			}
 
-		default:
-			continue
+
 		}
 	}
 }

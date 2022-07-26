@@ -19,8 +19,10 @@ var (
 
 func syncSafeRandom() *rand.Rand {
 	rndSync.Lock()
-	defer rndSync.Unlock()
-	return rand.New(rand.NewSource(rndSeed.Int63()))
+	out := rand.New(rand.NewSource(rndSeed.Int63()))
+	rndSync.Unlock()
+	
+	return out 
 }
 
 // packFromJSON takes a byte representation of json and attempts to convert it into a Pack object.
