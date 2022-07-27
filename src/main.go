@@ -16,7 +16,6 @@ import (
 var up = websocket.Upgrader{}
 
 var conchan = make(chan *websocket.Conn)
-var shutdown = make(chan bool)
 
 // Packs is all the packs able to be read when the program starts.
 
@@ -32,7 +31,7 @@ func upgrade(r http.ResponseWriter, c *http.Request) {
 }
 
 func main() {
-	s := flag.String("setdir", "sets", "Set the directory to search for cardsets")
+	s := flag.String("packdir", "packs", "Set the directory to search for extra card packs")
 	p := flag.Int("port", 4040, "Port for the websocket server to run on")
 	h := flag.String("host", "127.0.0.1", "Set the host to listen on")
 	sec := flag.Bool("tls", false, "Use HTTPS/WSS instead of HTTP/WS")
@@ -59,8 +58,8 @@ func main() {
 	log.Println("Starting server on " + *h + ":" + port)
 
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go webcode.HubLoop(conchan, shutdown, &wg)
+	webcode.InitGlobal(&wg)
+	go webcode.HubLoop(conchan, &wg)
 
 	http.HandleFunc("/", upgrade)
 
@@ -70,6 +69,6 @@ func main() {
 		log.Println(http.ListenAndServe(*h+":"+port, nil))
 	}
 
-	close(shutdown)
+	webcode.MasterShutdown = true
 	wg.Wait()
 }

@@ -6,6 +6,9 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"game"
+	"github.com/teris-io/shortid"
+	"encoding/json"
 )
 
 const MAX_PLAYERS = 1000
@@ -13,7 +16,15 @@ const MAX_PLAYERS = 1000
 var (
 	plcSync sync.Mutex
 	plc int = 0
+	MasterShutdown bool = false
+	sidSync sync.Mutex
 )
+
+func generateID() (string, error) {
+	sidSync.Lock()
+	defer sidSync.Unlock()
+	return shortid.GetDefault().Generate()
+}
 
 func addPlayer() bool {
 	defer plcSync.Unlock()
@@ -38,19 +49,21 @@ func delPlayer() {
 // HubLoop waits for either a shutdown signal or a new connection from a websocket through conchan.
 // When a new *Conn is sent, LobbyLoop creates a new goroutine on lobby and adds one to wg.
 // LobbyLoop calls wg.Done() on exit.
-func HubLoop(conchan <-chan *websocket.Conn, shutdown <-chan bool, wg *sync.WaitGroup) {
+func HubLoop(conchan <-chan *websocket.Conn, wg *sync.WaitGroup) {
+	wg.Add(1)
 	defer wg.Done()
 	for {
 		select {
 		case conn := <-conchan:
-			wg.Add(3)
-			
+	
 			if addPlayer() {
-				go lobby(initAsyncWS(conn, shutdown, wg), wg)
+				go lobby(initAsyncWS(conn, wg), wg)
 			}
 
-		case <-shutdown:
-			return
+		case <-time.After(time.Second*5):
+			if MasterShutdown {
+				return
+			}
 		}
 	}
 }
@@ -77,7 +90,8 @@ func handshake(msg RecieveMessage) bool {
 // Once a client closes or errors, lobby exits.
 // lobby calls wg.Done() on exit
 // Only write to a conn in this group
-func lobby(async AsyncWS, wg *sync.WaitGroup) {
+func lobby(async *AsyncWS, wg *sync.WaitGroup) {
+	wg.Add(1)
 	defer wg.Done()
 	defer delPlayer()
 	defer log.Println("Exit lobby")
@@ -94,18 +108,48 @@ func lobby(async AsyncWS, wg *sync.WaitGroup) {
 	}
 	
 	log.Println("Connection ok")
-	async.O <- SendMessage{"ready", ""}
+	async.O <- SendMessage{"ready", game.DefaultSettingsMsg}
 
 	// Todo: fix
 	//game_id := ""
+	var opts game.UOptions = game.DefaultUserSettings
 	for ;; {
 		select {
-		case _, ok := <-async.I:
+		case msg, ok := <-async.I:
 			if !ok {
 				return
 			}
+			switch msg.Type {
+			case "chat":
+				var d ChatMessage
+				err := json.Unmarshal([]byte(msg.Data), &d)
+				
+				if err != nil {
+					log.Println("Failed to parse chat msg")
+				}
+				
+				c := GetChat(d.ChatID)
+				
+				if c != nil {
+					select {
+					case c.Broadcast <- ChatMessage{opts.Name, d.Text, opts.Color, d.ChatID, false}:
 
-
+					case <-time.After(time.Second*1):
+						log.Println("Dropping chat msg (overloaded?)")
+					}
+				} else {
+					log.Println("User attempted to access invalid chat %s\n", d.ChatID)
+				}
+			case "ready":
+				GetChat("global").AddPlayer(async)
+			default:
+				log.Printf("Not Implimented: %s\n", msg.Type)
+			}
+			log.Println(msg)
+		case <-time.After(time.Second*1):
+			if MasterShutdown {
+				return
+			}
 		}
 	}
 }
