@@ -1,6 +1,7 @@
 package game
 
 // Represents an option
+// Don't modify
 type Option struct {
 	Type string `json:"type"`
 	Title string `json:"title"`
@@ -39,6 +40,7 @@ type UOptions struct {
 }
 
 // InitSettingsMsg defines the initial settings
+// Don't modify
 type InitSettingsMsg struct {
 	User UOptionsMsg `json:"user"`
 	Game GOptionsMsg `json:"game"`
@@ -55,7 +57,7 @@ var DefaultSettingsMsg InitSettingsMsg = InitSettingsMsg{
 		Option{
 			"color",
 			"Player Color",
-			[]interface{}{"red"},
+			[]interface{}{"#ff0000"},
 		},
 	},
 	GOptionsMsg{
@@ -84,5 +86,5 @@ var DefaultSettingsMsg InitSettingsMsg = InitSettingsMsg{
 
 var DefaultUserSettings UOptions = UOptions{
 	"Generic Player",
-	"red",
+	"#ff0000",
 }

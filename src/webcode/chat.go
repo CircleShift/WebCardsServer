@@ -16,12 +16,6 @@ type Chat struct {
 	shutdown bool
 }
 
-var (
-	lockChats sync.Mutex
-	chatCt int = 0
-	chats map[string]*Chat
-)
-
 func (c *Chat) loop(wg *sync.WaitGroup) {
 	wg.Add(1)
 	defer wg.Done()
@@ -33,14 +27,13 @@ func (c *Chat) loop(wg *sync.WaitGroup) {
 			}
 			send := SendMessage{"chat", SendMessage{"recieveMessage", msg}}
 			e := []*AsyncWS{}
-			for i := 0; i < len(c.clients); i++ {
-				log.Println(*(c.clients[i]))
-				if c.clients[i].IsClosed() {
-					e = append(e, c.clients[i])
+			for _, as := range c.clients{
+				if as.isClosed() {
+					e = append(e, as)
 					continue
 				}
 				select {
-				case c.clients[i].O <- send:
+				case as.O <- send:
 				case <-time.After(time.Second*1):
 					log.Println("Dropped message to client.")
 				}
@@ -78,45 +71,4 @@ func (c *Chat) DelPlayer(a *AsyncWS) {
 
 func (c *Chat) Shutdown() {
 	c.shutdown = true
-}
-
-func NewChat(name string, wg *sync.WaitGroup) string {
-	out := Chat{ Broadcast: make(chan ChatMessage), Name: name, clients: []*AsyncWS{}, shutdown: false}
-
-	id, _ := generateID()
-
-	for _, ok := chats[id]; ok; _, ok = chats[id] {
-		id, _ = generateID()
-	}
-
-	chats[id] = &out
-	go out.loop(wg)
-
-	return id
-}
-
-func InitGlobal(wg *sync.WaitGroup) {
-	if _, ok := chats["global"]; ok {
-		return
-	}
-	chats = make(map[string]*Chat)
-
-	out := Chat{ Broadcast: make(chan ChatMessage), Name: "Global", clients: []*AsyncWS{}, shutdown: false}
-
-	chats["global"] = &out
-	go out.loop(wg)
-}
-
-func DelChat(id string) {
-	if _, ok := chats[id]; ok {
-		chats[id].Shutdown()
-		delete(chats, id)
-	}
-}
-
-func GetChat(id string) *Chat {
-	if c, ok := chats[id]; ok {
-		return c
-	}
-	return nil
 }

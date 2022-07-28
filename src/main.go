@@ -58,7 +58,6 @@ func main() {
 	log.Println("Starting server on " + *h + ":" + port)
 
 	var wg sync.WaitGroup
-	webcode.InitGlobal(&wg)
 	go webcode.HubLoop(conchan, &wg)
 
 	http.HandleFunc("/", upgrade)

@@ -87,11 +87,11 @@ func (a *AsyncWS) writeLoop(wg *sync.WaitGroup) {
 	}
 }
 
-func (a *AsyncWS) IsClosed() bool {
+func (a *AsyncWS) isClosed() bool {
 	return a.closed
 }
 
-func initAsyncWS(conn *websocket.Conn, wg *sync.WaitGroup) *AsyncWS {
+func newAsyncWS(conn *websocket.Conn, wg *sync.WaitGroup) *AsyncWS {
 	out := AsyncWS{ c: conn, I: make(chan RecieveMessage), O: make(chan SendMessage), closed: false }
 
 	go out.readLoop(wg)
