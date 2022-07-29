@@ -29,6 +29,7 @@ func HubLoop(conchan <-chan *websocket.Conn, wg *sync.WaitGroup) {
 	wg.Add(1)
 	defer wg.Done()
 	initWebcode(wg)
+	cleanTicker := time.NewTicker(10*time.Second)
 	for {
 		select {
 		case conn := <-conchan:
@@ -44,6 +45,12 @@ func HubLoop(conchan <-chan *websocket.Conn, wg *sync.WaitGroup) {
 			if MasterShutdown {
 				return
 			}
+		}
+
+		select {
+		case <-cleanTicker.C:
+			cleanML()
+		default:
 		}
 	}
 }

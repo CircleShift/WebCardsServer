@@ -4,6 +4,7 @@ import (
 	"game"
 	"sync"
 	"time"
+	"log"
 )
 
 // Master lists for Players, Chats, and Games
@@ -13,12 +14,14 @@ type Player struct {
 	gameID string
 	chatList []string
 	as *AsyncWS
+	clean int
 }
 
 const (
 	MAX_PLAYERS = 1000
 	MAX_CHATS = 1000
 	MAX_GAMES = 500
+	DELETE_CYCLES = 2
 )
 
 var (
@@ -38,7 +41,7 @@ func newPlayer() string {
 		return ""
 	}
 
-	out := Player{game.DefaultUserSettings, "", []string{}, nil}
+	out := Player{game.DefaultUserSettings, "", []string{}, nil, 0}
 
 	sid, err := generateID()
 	_, ok := player_ml[sid]
@@ -142,6 +145,17 @@ func becomePlayer(as *AsyncWS, pid string) bool {
 	return false
 }
 
+func delPlayer(pid string) bool {
+	player_lock.Lock()
+	defer player_lock.Unlock()
+
+	if _, ok := player_ml[pid]; ok {
+		delete(player_ml, pid)
+		return true
+	}
+	return false
+}
+
 func getPlayer(as *AsyncWS, pid string) *Player {
 	if p, ok := player_ml[pid]; ok && p.as == as {
 		return p
@@ -185,10 +199,40 @@ func (p *Player) addChat(id string) bool {
 	return false
 }
 
+func delChat(cid string) bool {
+	chat_lock.Lock()
+	defer chat_lock.Unlock()
+
+	if c, ok := chat_ml[cid]; ok {
+		c.Shutdown()
+		delete(chat_ml, cid)
+		return true
+	}
+	return false
+}
+
 func initWebcode(wg *sync.WaitGroup) {
 	player_ml = make(map[string]*Player)
 	chat_ml = make(map[string]*Chat)
 	game_ml = make(map[string]*game.Game)
 
 	newChat("Global", "global", wg)
+}
+
+func cleanML() {
+	player_lock.Lock()
+
+	log.Println("Clean cycle")
+	for k, p := range player_ml {
+		if p.as == nil || p.as.isClosed() {
+			if p.clean < DELETE_CYCLES - 1 {
+				p.clean += 1
+			} else {
+				log.Println("Deleted a player object")
+				delete(player_ml, k)
+			}
+		}
+	}
+
+	player_lock.Unlock()
 }
