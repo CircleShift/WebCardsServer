@@ -28,6 +28,7 @@ func generateID() (string, error) {
 func HubLoop(conchan <-chan *websocket.Conn, wg *sync.WaitGroup) {
 	wg.Add(1)
 	defer wg.Done()
+	initWebcode(wg)
 	for {
 		select {
 		case conn := <-conchan:
@@ -86,6 +87,13 @@ func lobby(async *AsyncWS, pid string, wg *sync.WaitGroup) {
 	}
 	
 	log.Println("Connection ok")
+	
+	if !becomePlayer(async, pid) {
+		async.O <- SendMessage{"err", "Unable to become player"}
+		async.close()
+		return
+	}
+
 	async.O <- SendMessage{"ready", game.DefaultSettingsMsg}
 
 	for ;; {
@@ -94,7 +102,7 @@ func lobby(async *AsyncWS, pid string, wg *sync.WaitGroup) {
 			if !ok {
 				return
 			}
-			p := getPlayer(pid)
+			p := getPlayer(async, pid)
 			switch msg.Type {
 			case "chat":
 				var d ChatMessage
@@ -105,9 +113,9 @@ func lobby(async *AsyncWS, pid string, wg *sync.WaitGroup) {
 					break
 				}
 				
-				if p.hasChat(d.ChatID) {
+				if c := p.getChat(d.ChatID); c != nil {
 					select {
-					case chat_ml[d.ChatID].Broadcast <- ChatMessage{p.Options.Name, d.Text, p.Options.Color, d.ChatID, false}:
+					case c.Broadcast <- ChatMessage{p.Options.Name, d.Text, p.Options.Color, d.ChatID, false}:
 
 					case <-time.After(time.Second*1):
 						log.Println("Dropping chat msg (overloaded?)")
@@ -126,7 +134,7 @@ func lobby(async *AsyncWS, pid string, wg *sync.WaitGroup) {
 				p.Options = d
 
 			case "ready":
-				GetChat("global").AddPlayer(async)
+				p.addChat("global")
 			default:
 				log.Printf("Not Implimented: %s\n", msg.Type)
 			}
