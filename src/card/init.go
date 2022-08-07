@@ -38,21 +38,18 @@ func packFromJSON(dat []byte) (Pack, error) {
 }
 
 // packsFromDir takes a path to a directory and attempts to get any JSON files in it which represent a Pack object
-func packsFromDir(path string) ([]Pack, error) {
-	var out = []Pack{}
+func packsFromDir(path string, out *[]Pack) error {
 	var dat []byte
 	files, err := ioutil.ReadDir(path)
 
 	if err != nil {
-		return out, err
+		return err
 	}
 
 	for _, f := range files {
 		if f.IsDir() {
-			tmp, err := packsFromDir(path + string(os.PathSeparator) + f.Name())
-			if err == nil {
-				out = append(out, tmp...)
-			} else {
+			err := packsFromDir(path + string(os.PathSeparator) + f.Name(), out)
+			if err != nil {
 				log.Println("Failed to read " + path + string(os.PathSeparator) + f.Name() + " as directory.")
 			}
 		} else {
@@ -60,7 +57,7 @@ func packsFromDir(path string) ([]Pack, error) {
 			if err == nil {
 				tmp, err := packFromJSON(dat)
 				if err == nil {
-					out = append(out, tmp)
+					*out = append(*out, tmp)
 				} else {
 					log.Println("Unable to convert " + path + string(os.PathSeparator) + f.Name() + " to Pack")
 				}
@@ -70,7 +67,7 @@ func packsFromDir(path string) ([]Pack, error) {
 		}
 	}
 
-	return out, nil
+	return nil
 }
 
 // readPacks should be called only once on startup.
@@ -95,11 +92,9 @@ func readPacks(packdir string) ([]Pack, error) {
 
 	out = append(out, tmp)
 
-	packs, err := packsFromDir(packdir)
+	err = packsFromDir(packdir, &out)
 
-	if err == nil {
-		out = append(out, packs...)
-	} else {
+	if err != nil {
 		log.Println("Failed to get extra packs from " + packdir + ". Does the folder exist?")
 	}
 

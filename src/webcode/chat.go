@@ -26,20 +26,16 @@ func (c *Chat) loop(wg *sync.WaitGroup) {
 				return
 			}
 			send := SendMessage{"chat", SendMessage{"recieveMessage", msg}}
-			e := []*AsyncWS{}
 			for _, as := range c.clients{
 				if as.isClosed() {
-					e = append(e, as)
 					continue
 				}
+
 				select {
 				case as.O <- send:
 				case <-time.After(time.Second*1):
 					log.Println("Dropped message to client.")
 				}
-			}
-			for _, erase := range e {
-				c.DelPlayer(erase)
 			}
 		case <-time.After(time.Second*1):
 		}
@@ -69,6 +65,19 @@ func (c *Chat) DelPlayer(a *AsyncWS) {
 	c.chatLock.Unlock()
 }
 
+func (c *Chat) Clean() {
+	c.chatLock.Lock()
+	e := []*AsyncWS{}
+	for _, as := range c.clients {
+		if !as.isClosed() {
+			e = append(e, as)
+		}
+	}
+	c.clients = e
+	c.chatLock.Unlock()
+}
+
 func (c *Chat) Shutdown() {
 	c.shutdown = true
+	close(c.Broadcast)
 }

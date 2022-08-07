@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"sync"
 
 	"github.com/gorilla/websocket"
 
@@ -57,8 +56,7 @@ func main() {
 
 	log.Println("Starting server on " + *h + ":" + port)
 
-	var wg sync.WaitGroup
-	go webcode.HubLoop(conchan, &wg)
+	go webcode.HubLoop(conchan)
 
 	http.HandleFunc("/", upgrade)
 
@@ -69,5 +67,5 @@ func main() {
 	}
 
 	webcode.MasterShutdown = true
-	wg.Wait()
+	webcode.WebWG.Wait()
 }

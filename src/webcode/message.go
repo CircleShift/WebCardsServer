@@ -60,7 +60,7 @@ type AddGameMessage struct {
 // Initial message to let the user view all the public games
 type GameListMessage struct {
 	Game string `json:"game"`
-	Packs string `json:"packs"`
+	Packs int `json:"packs"`
 	Games []AddGameMessage `json:"games"`
 }
 

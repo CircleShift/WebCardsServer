@@ -1,7 +1,7 @@
 package webcode
 
 import (
-	"game"
+	"card"
 	"sync"
 	"time"
 	"log"
@@ -10,7 +10,7 @@ import (
 // Master lists for Players, Chats, and Games
 
 type Player struct {
-	Options game.UOptions
+	Options UOptions
 	gameID string
 	chatList []string
 	as *AsyncWS
@@ -30,7 +30,8 @@ var (
 	chat_lock sync.Mutex
 	chat_ml map[string]*Chat
 	game_lock sync.Mutex
-	game_ml map[string]*game.Game
+	game_ml map[string]*Game
+	pub_game_msg GameListMessage
 )
 
 func newPlayer() string {
@@ -41,7 +42,7 @@ func newPlayer() string {
 		return ""
 	}
 
-	out := Player{game.DefaultUserSettings, "", []string{}, nil, 0}
+	out := Player{DefaultUserSettings, "", []string{}, nil, 0}
 
 	sid, err := generateID()
 	_, ok := player_ml[sid]
@@ -64,7 +65,7 @@ func newPlayer() string {
 	return sid
 }
 
-func newChat(name, id string, wg *sync.WaitGroup) {
+func newChat(name, id string) {
 	chat_lock.Lock()
 	defer chat_lock.Unlock()
 
@@ -72,11 +73,11 @@ func newChat(name, id string, wg *sync.WaitGroup) {
 	if !ok {
 		out := Chat{ Broadcast: make(chan ChatMessage), Name: name, clients: []*AsyncWS{}, shutdown: false}
 		chat_ml[id] = &out
-		go out.loop(wg)
+		go out.loop(&WebWG)
 	}
 }
 
-func newChatID(name string, wg *sync.WaitGroup) string {
+func NewChatID(name string) string {
 	chat_lock.Lock()
 	defer chat_lock.Unlock()
 
@@ -100,11 +101,11 @@ func newChatID(name string, wg *sync.WaitGroup) string {
 		return ""
 	}
 
-	newChat(name, cid, wg)
+	newChat(name, cid)
 	return cid
 }
 
-func newGame() string {
+func newGame(o GOptions, p string) string {
 	game_lock.Lock()
 	defer game_lock.Unlock()
 
@@ -127,6 +128,8 @@ func newGame() string {
 	if ok {
 		return ""
 	}
+
+	game_ml[gid] = InitGame(o, p)
 
 	return gid
 }
@@ -163,6 +166,13 @@ func getPlayer(as *AsyncWS, pid string) *Player {
 	return nil
 }
 
+func getGame(gid string) *Game {
+	if g, ok := game_ml[gid]; ok{
+		return g
+	}
+	return nil
+}
+
 func (p *Player) getChat(cid string) *Chat {
 	if p == nil {
 		return nil
@@ -178,15 +188,15 @@ func (p *Player) getChat(cid string) *Chat {
 }
 
 func (p *Player) addChat(id string) bool {
-	c, ok := chat_ml[id]
-	if p == nil || !ok || p.as.isClosed() {
-		return false
-	}
-
 	for _, cid := range p.chatList {
 		if cid == id {
 			return true
 		}
+	}
+
+	c, ok := chat_ml[id]
+	if p == nil || !ok || p.as.isClosed() {
+		return false
 	}
 
 	select {
@@ -211,12 +221,27 @@ func delChat(cid string) bool {
 	return false
 }
 
-func initWebcode(wg *sync.WaitGroup) {
+func delGame(gid string) bool {
+	game_lock.Lock()
+	defer game_lock.Unlock()
+
+	if g, ok := game_ml[gid]; ok {
+		delete(game_ml, gid)
+		for _, cid := range g.Chats {
+			delChat(cid)
+		}
+		return true
+	}
+	return false
+}
+
+func initWebcode() {
 	player_ml = make(map[string]*Player)
 	chat_ml = make(map[string]*Chat)
-	game_ml = make(map[string]*game.Game)
+	game_ml = make(map[string]*Game)
+	pub_game_msg = GameListMessage{GAME_NAME, len(card.Packs), []AddGameMessage{}}
 
-	newChat("Global", "global", wg)
+	newChat("Global", "global")
 }
 
 func cleanML() {
@@ -228,11 +253,20 @@ func cleanML() {
 			if p.clean < DELETE_CYCLES - 1 {
 				p.clean += 1
 			} else {
-				log.Println("Deleted a player object")
 				delete(player_ml, k)
 			}
 		}
 	}
 
 	player_lock.Unlock()
+	chat_lock.Lock()
+
+	for k, c := range chat_ml {
+		 c.Clean()
+		 if (len(c.clients) == 0 && k != "global") || c.shutdown {
+			delete(chat_ml, k)
+		 }
+	}
+
+	chat_lock.Unlock()
 }

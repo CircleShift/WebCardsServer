@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"sync"
 	"time"
-	"game"
 	"github.com/teris-io/shortid"
 	"encoding/json"
 )
@@ -14,6 +13,7 @@ import (
 var (
 	MasterShutdown bool = false
 	sidSync sync.Mutex
+	WebWG sync.WaitGroup
 )
 
 func generateID() (string, error) {
@@ -25,17 +25,17 @@ func generateID() (string, error) {
 // HubLoop waits for either a shutdown signal or a new connection from a websocket through conchan.
 // When a new *Conn is sent, LobbyLoop creates a new goroutine on lobby and adds one to wg.
 // LobbyLoop calls wg.Done() on exit.
-func HubLoop(conchan <-chan *websocket.Conn, wg *sync.WaitGroup) {
-	wg.Add(1)
-	defer wg.Done()
-	initWebcode(wg)
+func HubLoop(conchan <-chan *websocket.Conn) {
+	WebWG.Add(1)
+	defer WebWG.Done()
+	initWebcode()
 	cleanTicker := time.NewTicker(10*time.Second)
 	for {
 		select {
 		case conn := <-conchan:
 			
 			if pid := newPlayer(); pid != "" {
-				go lobby(newAsyncWS(conn, wg), pid, wg)
+				go lobby(newAsyncWS(conn), pid)
 			} else {
 				conn.WriteJSON(SendMessage{"err", "maxcon"})
 				conn.Close()
@@ -77,10 +77,9 @@ func handshake(msg RecieveMessage) bool {
 // Once a client closes or errors, lobby exits.
 // lobby calls wg.Done() on exit
 // Only write to a conn in this group
-func lobby(async *AsyncWS, pid string, wg *sync.WaitGroup) {
-	wg.Add(1)
-	defer wg.Done()
-	defer log.Println("Exit lobby")
+func lobby(async *AsyncWS, pid string) {
+	WebWG.Add(1)
+	defer WebWG.Done()
 
 	// First msg should be a handshake
 	select {
@@ -96,17 +95,20 @@ func lobby(async *AsyncWS, pid string, wg *sync.WaitGroup) {
 	log.Println("Connection ok")
 	
 	if !becomePlayer(async, pid) {
-		async.O <- SendMessage{"err", "Unable to become player"}
-		async.close()
+		if !async.isClosed() {
+			async.O <- SendMessage{"err", "Unable to become player"}
+			async.close()
+		}
 		return
+	} else if !async.isClosed() {
+		async.O <- SendMessage{"ready", DefaultSettingsMsg}
 	}
-
-	async.O <- SendMessage{"ready", game.DefaultSettingsMsg}
 
 	for ;; {
 		select {
 		case msg, ok := <-async.I:
 			if !ok {
+				log.Printf("Player id:%s left.\n", pid)
 				return
 			}
 			p := getPlayer(async, pid)
@@ -120,7 +122,7 @@ func lobby(async *AsyncWS, pid string, wg *sync.WaitGroup) {
 					break
 				}
 				
-				if c := p.getChat(d.ChatID); c != nil {
+				if c := p.getChat(d.ChatID); c != nil && !c.shutdown {
 					select {
 					case c.Broadcast <- ChatMessage{p.Options.Name, d.Text, p.Options.Color, d.ChatID, false}:
 
@@ -131,7 +133,7 @@ func lobby(async *AsyncWS, pid string, wg *sync.WaitGroup) {
 					log.Println("User attempted to access invalid chat %s\n", d.ChatID)
 				}
 			case "options":
-				var d game.UOptions
+				var d UOptions
 				err := json.Unmarshal([]byte(msg.Data), &d)
 				
 				if err != nil {
@@ -139,7 +141,24 @@ func lobby(async *AsyncWS, pid string, wg *sync.WaitGroup) {
 					break
 				}
 				p.Options = d
+			case "create":
+				var d GOptions
+				err := json.Unmarshal([]byte(msg.Data), &d)
 
+				if err != nil {
+					log.Println("Failed to parse game options msg")
+					break
+				}
+
+				if gid := newGame(d, pid); gid != "" {
+					p.gameID = gid
+				} else {
+					log.Println("Unable to create new game")
+					if !async.isClosed() {
+						async.O <- SendMessage{"err", "Game creation error"}
+					}
+					break
+				}
 			case "ready":
 				p.addChat("global")
 			default:

@@ -4,7 +4,6 @@ import (
 	"github.com/gorilla/websocket"
 	"sync"
 	"time"
-	"log"
 )
 
 var (
@@ -44,7 +43,6 @@ func (a *AsyncWS) readLoop(wg *sync.WaitGroup) {
 		err := a.c.ReadJSON(&rm)
 		if err != nil || MasterShutdown {
 			a.close()
-			log.Printf("Done reading. %v\n", a.closed)
 			break
 		}
 
@@ -53,7 +51,6 @@ func (a *AsyncWS) readLoop(wg *sync.WaitGroup) {
 		} else if !a.closed {
 			a.I <- rm
 		} else {
-			log.Printf("Done reading. %v\n", a.closed)
 			break
 		}
 	}
@@ -81,7 +78,6 @@ func (a *AsyncWS) writeLoop(wg *sync.WaitGroup) {
 		err := a.c.WriteJSON(sm)
 		if err != nil || a.closed || MasterShutdown {
 			a.close()
-			log.Printf("Done writing. %v\n", a.closed)
 			break
 		}
 	}
@@ -91,11 +87,11 @@ func (a *AsyncWS) isClosed() bool {
 	return a.closed
 }
 
-func newAsyncWS(conn *websocket.Conn, wg *sync.WaitGroup) *AsyncWS {
+func newAsyncWS(conn *websocket.Conn) *AsyncWS {
 	out := AsyncWS{ c: conn, I: make(chan RecieveMessage), O: make(chan SendMessage), closed: false }
 
-	go out.readLoop(wg)
-	go out.writeLoop(wg)
+	go out.readLoop(&WebWG)
+	go out.writeLoop(&WebWG)
 
 	return &out
 }
