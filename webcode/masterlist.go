@@ -1,7 +1,7 @@
 package webcode
 
 import (
-	"card"
+	card "cshift.net/webcards/card"
 	"sync"
 	"time"
 	"log"

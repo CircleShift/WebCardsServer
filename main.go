@@ -8,8 +8,8 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"card"
-	"webcode"
+	webcode "cshift.net/webcards/webcode"
+	card "cshift.net/webcards/card"
 )
 
 var up = websocket.Upgrader{}
