@@ -17,6 +17,10 @@ type Chat struct {
 }
 
 func (c *Chat) loop(wg *sync.WaitGroup) {
+	if c.shutdown {
+		return
+	}
+
 	wg.Add(1)
 	defer wg.Done()
 	for {
@@ -47,12 +51,20 @@ func (c *Chat) loop(wg *sync.WaitGroup) {
 }
 
 func (c *Chat) AddPlayer(a *AsyncWS) {
+	if c.shutdown {
+		return
+	}
+
 	c.chatLock.Lock()
 	c.clients = append(c.clients, a)
 	c.chatLock.Unlock()
 }
 
 func (c *Chat) DelPlayer(a *AsyncWS) {
+	if c.shutdown {
+		return
+	}
+
 	c.chatLock.Lock()
 	for i := 0; i < len(c.clients); i++ {
 		if c.clients[i] == a {
@@ -66,6 +78,10 @@ func (c *Chat) DelPlayer(a *AsyncWS) {
 }
 
 func (c *Chat) Clean() {
+	if c.shutdown {
+		return
+	}
+
 	c.chatLock.Lock()
 	e := []*AsyncWS{}
 	for _, as := range c.clients {

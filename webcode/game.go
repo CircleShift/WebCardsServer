@@ -2,7 +2,7 @@ package webcode
 
 
 type Game struct {
-	// Must provide all 
+	// Must provide all chats used in game
 	Chats []string
 	// 
 	Players []string
@@ -12,6 +12,11 @@ type Game struct {
 // For modification: init code
 func InitGame(options GOptions, player_one string) *Game {
 	return nil
+}
+
+// What happens when the game is done
+func (g *Game) EndGame() {
+	
 }
 
 // Return true if player is added to the game

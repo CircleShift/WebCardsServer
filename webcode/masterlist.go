@@ -3,19 +3,10 @@ package webcode
 import (
 	card "cshift.net/webcards/card"
 	"sync"
-	"time"
 	"log"
 )
 
 // Master lists for Players, Chats, and Games
-
-type Player struct {
-	Options UOptions
-	gameID string
-	chatList []string
-	as *AsyncWS
-	clean int
-}
 
 const (
 	MAX_PLAYERS = 1000
@@ -77,7 +68,7 @@ func newChat(name, id string) {
 	}
 }
 
-func NewChatID(name string) string {
+func newChatID(name string) string {
 	chat_lock.Lock()
 	defer chat_lock.Unlock()
 
@@ -134,6 +125,27 @@ func newGame(o GOptions, p string) string {
 	return gid
 }
 
+func getPlayer(as *AsyncWS, pid string) *Player {
+	if p, ok := player_ml[pid]; ok && p.as == as {
+		return p
+	}
+	return nil
+}
+
+func getGame(gid string) *Game {
+	if g, ok := game_ml[gid]; ok{
+		return g
+	}
+	return nil
+}
+
+func getChat(cid string) *Chat {
+	if c, ok := chat_ml[cid]; ok{
+		return c
+	}
+	return nil
+}
+
 func becomePlayer(as *AsyncWS, pid string) bool {
 	player_lock.Lock()
 	defer player_lock.Unlock()
@@ -159,55 +171,7 @@ func delPlayer(pid string) bool {
 	return false
 }
 
-func getPlayer(as *AsyncWS, pid string) *Player {
-	if p, ok := player_ml[pid]; ok && p.as == as {
-		return p
-	}
-	return nil
-}
 
-func getGame(gid string) *Game {
-	if g, ok := game_ml[gid]; ok{
-		return g
-	}
-	return nil
-}
-
-func (p *Player) getChat(cid string) *Chat {
-	if p == nil {
-		return nil
-	}
-
-	for _, c := range p.chatList {
-		if c == cid {
-			return chat_ml[c]
-		}
-	}
-
-	return nil
-}
-
-func (p *Player) addChat(id string) bool {
-	for _, cid := range p.chatList {
-		if cid == id {
-			return true
-		}
-	}
-
-	c, ok := chat_ml[id]
-	if p == nil || !ok || p.as.isClosed() {
-		return false
-	}
-
-	select {
-	case p.as.O <- SendMessage{"chat", SendMessage{"addChannel", AddChatMessage{c.Name, id, true}}}:
-		p.chatList = append(p.chatList, id)
-		c.AddPlayer(p.as)
-		return true
-	case <-time.After(1*time.Second):
-	}
-	return false
-}
 
 func delChat(cid string) bool {
 	chat_lock.Lock()
