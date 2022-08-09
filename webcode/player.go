@@ -34,8 +34,8 @@ func (p *Player) addChat(id string) bool {
 		}
 	}
 
-	c, ok := chat_ml[id]
-	if p == nil || !ok || p.as.isClosed() {
+	c := getChat(id)
+	if p == nil || c == nil || p.as.isClosed() {
 		return false
 	}
 
@@ -70,11 +70,50 @@ func (p *Player) delChat(id string) {
 					cpy = append(cpy, p.chatList[i+1:]...)
 				}
 			case <-time.After(1*time.Second):
-				log.Println("Failed to send");
+				log.Println("Failed to remove channel from player");
 				return
 			}
 
 			return
 		}
+	}
+}
+
+func (p *Player) noJoinGame(reason string) {
+	if p == nil || p.as.isClosed() {
+		return
+	}
+
+	select {
+	case p.as.O <- SendMessage{"game", SendMessage{"nojoin", reason}}:
+	case <-time.After(1*time.Second):
+		log.Println("Failed to inform player of nojoin");
+	}
+}
+
+// Assuming that one player is only ever in one game.
+func (p *Player) joinGame() {
+	if p == nil || p.as.isClosed() {
+		return
+	}
+
+	select {
+	case p.as.O <- SendMessage{"game", SendMessage{"join", ""}}:
+	case <-time.After(1*time.Second):
+		log.Println("Failed to inform player of nojoin");
+	}
+}
+
+func (p *Player) leaveGame() {
+	if p == nil || p.as.isClosed() {
+		return
+	}
+
+	p.gameID = ""
+
+	select {
+	case p.as.O <- SendMessage{"game", SendMessage{"leave", ""}}:
+	case <-time.After(1*time.Second):
+		log.Println("Failed to inform player of leave");
 	}
 }

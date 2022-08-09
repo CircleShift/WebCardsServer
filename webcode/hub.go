@@ -111,7 +111,7 @@ func lobby(async *AsyncWS, pid string) {
 				log.Printf("Player id:%s left.\n", pid)
 				return
 			}
-			p := getPlayer(async, pid)
+			p := getPlayer(pid)
 			switch msg.Type {
 			case "chat":
 				var d ChatMessage

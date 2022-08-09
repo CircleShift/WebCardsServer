@@ -125,8 +125,8 @@ func newGame(o GOptions, p string) string {
 	return gid
 }
 
-func getPlayer(as *AsyncWS, pid string) *Player {
-	if p, ok := player_ml[pid]; ok && p.as == as {
+func getPlayer(pid string) *Player {
+	if p, ok := player_ml[pid]; ok{
 		return p
 	}
 	return nil
