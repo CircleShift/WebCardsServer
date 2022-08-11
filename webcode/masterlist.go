@@ -22,6 +22,7 @@ var (
 	chat_ml map[string]*Chat
 	game_lock sync.Mutex
 	game_ml map[string]*Game
+	pub_game_lock sync.Mutex
 	pub_game_msg GameListMessage
 )
 
@@ -85,9 +86,9 @@ func newChatID(name string) string {
 			break
 		}
 		cid, err = generateID()
+		_, ok = chat_ml[cid]
 	}
 
-	_, ok = chat_ml[cid]
 	if ok {
 		return ""
 	}
@@ -113,9 +114,9 @@ func newGame(o GOptions, p string) string {
 			break
 		}
 		gid, err = generateID()
+		_, ok = game_ml[gid]
 	}
-
-	_, ok = game_ml[gid]
+	
 	if ok {
 		return ""
 	}
@@ -197,6 +198,23 @@ func delGame(gid string) bool {
 		return true
 	}
 	return false
+}
+
+func addPublic(msg AddGameMessage) {
+	pub_game_lock.Lock()
+	defer pub_game_lock.Unlock()
+	rep := -1
+	for i, gm := range pub_game_msg.Games {
+		
+	}
+}
+
+func delPublic(id string) {
+	pub_game_lock.Lock()
+	defer pub_game_lock.Unlock()
+	for i, gm := range pub_game_msg.Games {
+
+	}
 }
 
 func initWebcode() {

@@ -95,13 +95,11 @@ func lobby(async *AsyncWS, pid string) {
 	log.Println("Connection ok")
 	
 	if !becomePlayer(async, pid) {
-		if !async.isClosed() {
-			async.O <- SendMessage{"err", "Unable to become player"}
-			async.close()
-		}
+		async.trySend(SendMessage{"err", "Unable to become player"})
+		async.close()
 		return
 	} else if !async.isClosed() {
-		async.O <- SendMessage{"ready", DefaultSettingsMsg}
+		async.trySend(SendMessage{"ready", DefaultSettingsMsg})
 	}
 
 	for ;; {
@@ -154,9 +152,7 @@ func lobby(async *AsyncWS, pid string) {
 					p.gameID = gid
 				} else {
 					log.Println("Unable to create new game")
-					if !async.isClosed() {
-						async.O <- SendMessage{"err", "Game creation error"}
-					}
+					async.trySend(SendMessage{"err", "Game creation error"})
 					break
 				}
 			case "ready":

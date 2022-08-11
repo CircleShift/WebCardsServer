@@ -16,15 +16,15 @@ type AsyncWS struct {
 	c *websocket.Conn
 	I chan RecieveMessage
 	O chan SendMessage
-	closeSync sync.Mutex
+	chanSync sync.Mutex
 	closed bool
 }
 
 // Totally safe and definately won't crash or cause catastrophic errors.
 // Source: trust me bro
 func (a *AsyncWS) close() {
-	a.closeSync.Lock()
-	defer a.closeSync.Unlock()
+	a.chanSync.Lock()
+	defer a.chanSync.Unlock()
 	if a.closed {
 		return
 	}
@@ -49,7 +49,12 @@ func (a *AsyncWS) readLoop(wg *sync.WaitGroup) {
 		if rm.Type == "pong" {
 			a.c.SetReadDeadline(time.Now().Add(pongWait))
 		} else if !a.closed {
-			a.I <- rm
+			a.chanSync.Lock()
+			select {
+			case a.I <- rm:
+			case <-time.After(time.Second):
+			}
+			a.chanSync.Unlock()
 		} else {
 			break
 		}
@@ -81,6 +86,22 @@ func (a *AsyncWS) writeLoop(wg *sync.WaitGroup) {
 			break
 		}
 	}
+}
+
+func (a *AsyncWS) trySend(sm SendMessage) bool {
+	a.chanSync.Lock()
+	defer a.chanSync.Unlock()
+	if a.closed {
+		return false
+	}
+
+	select {
+	case a.O <- sm:
+		return true
+	case <-time.After(time.Second):
+	}
+
+	return false
 }
 
 func (a *AsyncWS) isClosed() bool {

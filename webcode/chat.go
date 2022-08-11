@@ -31,14 +31,8 @@ func (c *Chat) loop(wg *sync.WaitGroup) {
 			}
 			send := SendMessage{"chat", SendMessage{"recieveMessage", msg}}
 			for _, as := range c.clients{
-				if as.isClosed() {
-					continue
-				}
-
-				select {
-				case as.O <- send:
-				case <-time.After(time.Second*1):
-					log.Println("Dropped message to client.")
+				if !as.trySend(send) {
+					log.Println("Dropped chat message to client.")
 				}
 			}
 		case <-time.After(time.Second*1):
