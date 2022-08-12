@@ -1,7 +1,7 @@
 package webcode
 
 // Put the name of your game here
-const GAME_NAME = "Euchre"
+const GAME_NAME = "No, U"
 
 // Represents an option
 // Don't modify

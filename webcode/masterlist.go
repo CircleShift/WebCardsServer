@@ -121,7 +121,7 @@ func newGame(o GOptions, p string) string {
 		return ""
 	}
 
-	game_ml[gid] = InitGame(o, p)
+	game_ml[gid] = InitGame(o, gid, p)
 
 	return gid
 }
@@ -201,20 +201,34 @@ func delGame(gid string) bool {
 }
 
 func addPublic(msg AddGameMessage) {
+	log.Println("adding public game")
 	pub_game_lock.Lock()
-	defer pub_game_lock.Unlock()
-	rep := -1
-	for i, gm := range pub_game_msg.Games {
-		
+	pub_game_msg.Games = append(pub_game_msg.Games, msg)
+	pub_game_lock.Unlock()
+	log.Println("sending message")
+	player_lock.Lock()
+	for _, p := range player_ml {
+		p.as.trySend(SendMessage{"lobby", SendMessage{"addGame", msg}})
 	}
+	player_lock.Unlock()
+	log.Println("done")
 }
 
 func delPublic(id string) {
 	pub_game_lock.Lock()
-	defer pub_game_lock.Unlock()
 	for i, gm := range pub_game_msg.Games {
-
+		if gm.GameID == id {
+			pub_game_msg.Games[i] = pub_game_msg.Games[len(pub_game_msg.Games) - 1]
+			pub_game_msg.Games = pub_game_msg.Games[0:len(pub_game_msg.Games) - 1]
+			break
+		}
 	}
+	pub_game_lock.Unlock()
+	player_lock.Lock()
+	for _, p := range player_ml {
+		p.as.trySend(SendMessage{"lobby", SendMessage{"delGame", id}})
+	}
+	player_lock.Unlock()
 }
 
 func initWebcode() {
@@ -245,10 +259,20 @@ func cleanML() {
 
 	for k, c := range chat_ml {
 		 c.Clean()
-		 if (len(c.clients) == 0 && k != "global") || c.shutdown {
+		 if c.shutdown {
 			delete(chat_ml, k)
 		 }
 	}
 
 	chat_lock.Unlock()
+	game_lock.Lock()
+
+	for k, g := range game_ml {
+		if g.end {
+			log.Println("Deleted a game")
+			delete(game_ml, k)
+		}
+	}
+
+	game_lock.Unlock()
 }

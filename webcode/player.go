@@ -5,7 +5,7 @@ import (
 )
 
 type Player struct {
-	Options UOptions
+	options UOptions
 	gameID string
 	chatList []string
 	as *AsyncWS
@@ -90,4 +90,16 @@ func (p *Player) joinGame() {
 func (p *Player) leaveGame() {
 	p.gameID = ""
 	p.as.trySend(SendMessage{"game", SendMessage{"leave", ""}})
+}
+
+func (p *Player) newDeck(d NewDeckMessage) {
+	p.as.trySend(SendMessage{"game", SendMessage{"newDeck", d}})
+}
+
+func (p *Player) newCard(c NewCardMessage) {
+	p.as.trySend(SendMessage{"game", SendMessage{"newCard", c}})
+}
+
+func (p *Player) deleteCard(id string) {
+	p.as.trySend(SendMessage{"game", SendMessage{"deleteCard", id}})
 }

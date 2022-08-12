@@ -105,11 +105,19 @@ func lobby(async *AsyncWS, pid string) {
 	for ;; {
 		select {
 		case msg, ok := <-async.I:
+			p := getPlayer(pid)
+			
 			if !ok {
 				log.Printf("Player id:%s left.\n", pid)
+				if g := getGame(p.gameID); g != nil {
+					g.playerLeave(pid)
+				}
+				p.gameID = ""
+				p.chatList = []string{"global"}
+				p.options = DefaultUserSettings
 				return
 			}
-			p := getPlayer(pid)
+
 			switch msg.Type {
 			case "chat":
 				var d ChatMessage
@@ -122,7 +130,7 @@ func lobby(async *AsyncWS, pid string) {
 				
 				if c := p.getChat(d.ChatID); c != nil && !c.shutdown {
 					select {
-					case c.Broadcast <- ChatMessage{p.Options.Name, d.Text, p.Options.Color, d.ChatID, false}:
+					case c.Broadcast <- ChatMessage{p.options.Name, d.Text, p.options.Color, d.ChatID, false}:
 
 					case <-time.After(time.Second*1):
 						log.Println("Dropping chat msg (overloaded?)")
@@ -138,7 +146,7 @@ func lobby(async *AsyncWS, pid string) {
 					log.Println("Failed to parse player options")
 					break
 				}
-				p.Options = d
+				p.options = d
 			case "create":
 				var d GOptions
 				err := json.Unmarshal([]byte(msg.Data), &d)
@@ -150,13 +158,49 @@ func lobby(async *AsyncWS, pid string) {
 
 				if gid := newGame(d, pid); gid != "" {
 					p.gameID = gid
+					p.joinGame()
+					g := getGame(gid)
+					g.playerJoin(pid)
 				} else {
 					log.Println("Unable to create new game")
-					async.trySend(SendMessage{"err", "Game creation error"})
+					p.noJoinGame("Game creation error")
+				}
+			case "join":
+				var d JoinGameMessage
+				err := json.Unmarshal([]byte(msg.Data), &d)
+
+				if err != nil {
+					log.Println("Failed to parse join msg")
 					break
 				}
+
+				g := getGame(d.GameID)
+
+				if g_old := getGame(p.gameID); p.gameID != "" && g_old != nil {
+					g_old.playerLeave(pid)
+				}
+
+				p.gameID = ""
+
+				if g != nil && g.playerAdd(pid, d.Password) {
+					p.gameID = d.GameID
+					p.joinGame()
+					g.playerJoin(pid)
+				} else {
+					p.noJoinGame("Failed to join")
+				}
+			case "leave":
+				g := getGame(p.gameID)
+				p.gameID = ""
+				if g != nil {
+					g.playerLeave(pid)
+				}
+				p.leaveGame()
 			case "ready":
 				p.addChat("global")
+				pub_game_lock.Lock()
+				async.trySend(SendMessage{"lobby", SendMessage{"gameList", pub_game_msg}})
+				pub_game_lock.Unlock()
 			default:
 				log.Printf("Not Implimented: %s\n", msg.Type)
 			}

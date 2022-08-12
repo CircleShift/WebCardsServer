@@ -77,7 +77,7 @@ type DeckOptions struct {
 	Mode string `json:"mode"`
 	SelectMode string `json:"smode"`
 	SelectCount int `json:"sct"`
-	Position []float64 `json:"pos"`
+	Position [4]float64 `json:"pos"`
 }
 
 type NewDeckMessage struct {
