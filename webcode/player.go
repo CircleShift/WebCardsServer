@@ -96,6 +96,10 @@ func (p *Player) newDeck(d NewDeckMessage) {
 	p.as.trySend(SendMessage{"game", SendMessage{"newDeck", d}})
 }
 
+func (p *Player) deleteDeck(id string) {
+	p.as.trySend(SendMessage{"game", SendMessage{"deleteDeck", id}})
+}
+
 func (p *Player) newCard(c NewCardMessage) {
 	p.as.trySend(SendMessage{"game", SendMessage{"newCard", c}})
 }
@@ -103,3 +107,12 @@ func (p *Player) newCard(c NewCardMessage) {
 func (p *Player) deleteCard(id string) {
 	p.as.trySend(SendMessage{"game", SendMessage{"deleteCard", id}})
 }
+
+func (p *Player) moveCard(m MoveCardMessage) {
+	p.as.trySend(SendMessage{"game", SendMessage{"moveCard", m}})
+}
+
+func (p *Player) replaceCard(s SwapCardMessage) {
+	p.as.trySend(SendMessage{"game", SendMessage{"swapCard", s}})
+}
+

@@ -154,6 +154,8 @@ func lobby(async *AsyncWS, pid string) {
 				if err != nil {
 					log.Println("Failed to parse game options msg")
 					break
+				} else if g := getGame(p.gameID); g != nil && !g.end {
+					g.playerLeave(pid)
 				}
 
 				if gid := newGame(d, pid); gid != "" {
@@ -182,7 +184,7 @@ func lobby(async *AsyncWS, pid string) {
 
 				p.gameID = ""
 
-				if g != nil && g.playerAdd(pid, d.Password) {
+				if g != nil && g.playerCanJoin(pid, d.Password) {
 					p.gameID = d.GameID
 					p.joinGame()
 					g.playerJoin(pid)
@@ -196,9 +198,22 @@ func lobby(async *AsyncWS, pid string) {
 					g.playerLeave(pid)
 				}
 				p.leaveGame()
+			case "move":
+				var d MoveCardMessage
+				err := json.Unmarshal([]byte(msg.Data), &d)
+
+				if err != nil {
+					log.Println("Failed to parse move msg")
+					break
+				}
+
+				if g := getGame(p.gameID); g != nil {
+					g.tryMove(pid, d)
+				}
 			case "ready":
 				p.addChat("global")
 				pub_game_lock.Lock()
+				log.Println(pub_game_msg)
 				async.trySend(SendMessage{"lobby", SendMessage{"gameList", pub_game_msg}})
 				pub_game_lock.Unlock()
 			default:

@@ -92,13 +92,13 @@ type NewCardMessage struct {
 }
 
 type MoveCardMessage struct {
-	CardID string `type:"cardID"`
-	DeckID string `type:"deckID"`
-	Index string `type:"index"`
+	CardID string `json:"card"`
+	DeckID string `json:"deck"`
+	Index int `json:"index"`
 }
 
 type SwapCardMessage struct {
-	CardID string `type:"cardID"`
-	NewID string `type:"newID"`
-	Data interface{} `type:"data"`
+	CardID string `json:"card"`
+	NewID string `json:"id"`
+	Data interface{} `json:"data"`
 }

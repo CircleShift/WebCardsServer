@@ -8,6 +8,7 @@ import (
 type Game struct {
 	// lets the clean loop know that it can delete the game object
 	end bool
+	id string
 
 	// chats used in game
 	Chats []string
@@ -29,8 +30,9 @@ func InitGame(options GOptions, id string, player_one string) *Game {
 	var out Game
 
 	out.Chats = []string{}
-	out.Players = []string{player_one}
+	out.Players = []string{}
 	out.end = false
+	out.id = id
 
 	if options.UsePassword {
 		out.pass = options.Password
@@ -48,12 +50,14 @@ func InitGame(options GOptions, id string, player_one string) *Game {
 
 // What happens when the game is done
 func (g *Game) EndGame() {
+	log.Println("Game end")
+	delPublic(g.id)
 	g.end = true
 }
 
 // Return true if player is added to the game
 // return false otherwise
-func (g *Game) playerAdd(pid string, password string) bool {
+func (g *Game) playerCanJoin(pid string, password string) bool {
 	if g.end || (g.pass != password && g.pass != "") {
 		return false
 	}
@@ -76,6 +80,10 @@ func (g *Game) playerJoin(pid string) {
 	g.setupUI(pid)
 	g.game_state.Lock()
 	defer g.game_state.Unlock()
+	if p := getPlayer(pid); p != nil && g.end {
+		p.leaveGame()
+		return
+	}
 	g.Players = append(g.Players, pid)
 }
 
@@ -83,15 +91,25 @@ func (g *Game) playerJoin(pid string) {
 func (g *Game) playerLeave(pid string) {
 	g.game_state.Lock()
 	defer g.game_state.Unlock()
-	if len(g.Players) <= 1 {
-		g.EndGame()
-	} else {
 
+	for i, s := range g.Players {
+		if s == pid {
+			g.Players[i] = g.Players[len(g.Players) - 1]
+			g.Players = g.Players[:len(g.Players) - 1]
+			break
+		}
+	}
+
+	if len(g.Players) < 1 {
+		g.EndGame()
 	}
 }
 
 // For modification: code for when a player makes a move
 // Return false if move is illegal
-func (g *Game) TryMove(player string) bool {
-	return true
+func (g *Game) tryMove(player string, msg MoveCardMessage) {
+	log.Println("TryMove")
+	p := getPlayer(player)
+	p.moveCard(msg)
+	//p.moveNotOk()
 }
