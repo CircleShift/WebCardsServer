@@ -89,11 +89,11 @@ func (a *AsyncWS) writeLoop(wg *sync.WaitGroup) {
 }
 
 func (a *AsyncWS) trySend(sm SendMessage) bool {
-	a.chanSync.Lock()
-	defer a.chanSync.Unlock()
-	if a.closed {
+	if a.isClosed() {
 		return false
 	}
+	a.chanSync.Lock()
+	defer a.chanSync.Unlock()
 
 	select {
 	case a.O <- sm:
@@ -105,7 +105,7 @@ func (a *AsyncWS) trySend(sm SendMessage) bool {
 }
 
 func (a *AsyncWS) isClosed() bool {
-	return a.closed
+	return a == nil || a.closed
 }
 
 func newAsyncWS(conn *websocket.Conn) *AsyncWS {
