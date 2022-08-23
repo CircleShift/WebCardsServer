@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"fmt"
+	"time"
 
 	"github.com/gorilla/websocket"
 
@@ -18,10 +20,10 @@ var conchan = make(chan *websocket.Conn)
 
 // Packs is all the packs able to be read when the program starts.
 
-func upgrade(r http.ResponseWriter, c *http.Request) {
+func passConn(r http.ResponseWriter, c *http.Request) {
 	client, err := up.Upgrade(r, c, nil)
 
-	if err != nil {
+	if err != nil || webcode.MasterShutdown {
 		log.Println(err.Error())
 		return
 	}
@@ -29,10 +31,23 @@ func upgrade(r http.ResponseWriter, c *http.Request) {
 	conchan <- client
 }
 
+func handleUsrInput() {
+	var i string
+	for {
+		fmt.Scanln(&i)
+		switch i {
+		case "exit":
+			return
+		default:
+			log.Printf("Command not recognized %s", i)
+		}
+	}
+}
+
 func main() {
 	s := flag.String("packdir", "packs", "Set the directory to search for extra card packs")
 	p := flag.Int("port", 4040, "Port for the websocket server to run on")
-	h := flag.String("host", "127.0.0.1", "Set the host to listen on")
+	h := flag.String("host", "", "Set the host to listen on")
 	sec := flag.Bool("tls", false, "Use HTTPS/WSS instead of HTTP/WS")
 	sec_c := flag.String("cert", "host.csr", "Cert file for tls")
 	sec_k := flag.String("key", "host.key", "Key file for tls")
@@ -58,13 +73,23 @@ func main() {
 
 	go webcode.HubLoop(conchan)
 
-	http.HandleFunc("/", upgrade)
+	server := &http.Server {
+		Addr: *h+":"+port,
+		Handler: http.HandlerFunc(passConn),
+		ReadTimeout: 10*time.Second,
+		WriteTimeout: 10*time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
 
 	if *sec {
-		log.Println(http.ListenAndServeTLS(*h+":"+port, *sec_c, *sec_k, nil))
+		go server.ListenAndServeTLS(*sec_c, *sec_k)
 	} else {
-		log.Println(http.ListenAndServe(*h+":"+port, nil))
+		go server.ListenAndServe()
 	}
+
+	defer server.Close()
+
+	handleUsrInput()
 
 	webcode.MasterShutdown = true
 	webcode.WebWG.Wait()

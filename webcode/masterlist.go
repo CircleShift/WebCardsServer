@@ -243,7 +243,6 @@ func initWebcode() {
 func cleanML() {
 	player_lock.Lock()
 
-	log.Println("Clean cycle")
 	for k, p := range player_ml {
 		if p.as == nil || p.as.isClosed() {
 			if p.clean < DELETE_CYCLES - 1 {
