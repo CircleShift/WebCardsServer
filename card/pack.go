@@ -54,6 +54,30 @@ func (p *Pack) GetRandomCard(r *rand.Rand, chance float64) Ref {
 	return NilRef
 }
 
+// GetCard returns a specific card by name and suit
+func (p *Pack) GetCard(suit, name string) Card {
+	if s, ok := p.Suits[suit]; ok {
+		for _, c := range s {
+			if c.Name == name {
+				return c
+			}
+		}
+	}
+	return Card{"", ""}
+}
+
+// GetCardRef returns a specific card reference by name and suit
+func (p *Pack) GetCardRef(suit, name string) Ref {
+	if s, ok := p.Suits[suit]; ok {
+		for i, c := range s {
+			if c.Name == name {
+				return Ref{P: p, Suit: suit, CardID: i}
+			}
+		}
+	}
+	return NilRef
+}
+
 // GetSuitChance returns a chance value such that the GetRandomSuit funcation has a good chance of outputing a suit.
 func (p *Pack) GetSuitChance() float64 {
 	return 1.0 / float64(len(p.Suits))

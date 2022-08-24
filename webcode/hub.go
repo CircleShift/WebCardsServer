@@ -219,7 +219,6 @@ func lobby(async *AsyncWS, pid string) {
 			default:
 				log.Printf("Not Implimented: %s\n", msg.Type)
 			}
-			log.Println(msg)
 		case <-time.After(time.Second*1):
 			if MasterShutdown {
 				return

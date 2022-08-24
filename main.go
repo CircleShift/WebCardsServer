@@ -65,7 +65,7 @@ func main() {
 		log.Fatal("Failed to read default.json, exiting.")
 	}
 
-	log.Println(card.Packs)
+	log.Printf("Loaded %d packs\n", len(card.Packs))
 
 	port := strconv.Itoa(*p)
 

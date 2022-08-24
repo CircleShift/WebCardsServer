@@ -75,6 +75,9 @@
 			{"name": "draw-set-color", "data": {"style": {"background-color": "black"}, "all": [{"type": "image", "image": "assets/nou/draw-set-color.svg"}]}},
 			{"name": "reverse", "data": {"style": {"background-color": "black"}, "all": [{"type": "image", "image": "assets/nou/reverse.svg"}]}},
 			{"name": "skip", "data": {"style": {"background-color": "black"}, "all": [{"type": "image", "image": "assets/nou/skip.svg"}]}}
+		],
+		"draw": [
+			{"name": "draw", "data": {"style": {"background-color": "black", "color":"white", "font-size": "24px"}, "all": [{"type": "image", "image": "assets/nou/set-color.svg"}], "botm": [{"type": "text", "text": "No, U"}]}}
 		]
 	}
 }

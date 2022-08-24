@@ -3,6 +3,8 @@ package webcode
 import (
 	"sync"
 	"log"
+
+	card "cshift.net/webcards/card"
 )
 
 type Game struct {
@@ -68,8 +70,11 @@ func (g *Game) playerCanJoin(pid string, password string) bool {
 // Might be called if a player re-joins a game
 func (g *Game) setupUI(pid string) {
 	if p := getPlayer(pid); p != nil {
-		p.newDeck(NewDeckMessage{"0", DeckOptions{"stack", "one", 0, [4]float64{0.5, 0.5, 0.0, 1.0}}})
-		p.newDeck(NewDeckMessage{pid, DeckOptions{"strip-hr", "one", 0, [4]float64{0.5, 1.0, 0.0, 1.0}}})
+		p.newDeck(NewDeckMessage{"0", DeckOptions{"inf", "one", 0, [4]float64{0.05, 0.05, 0.0, 1.0}}})
+		p.newDeck(NewDeckMessage{"1", DeckOptions{"stack", "one", 0, [4]float64{0.95, 0.05, 0.0, 1.0}}})
+		p.newDeck(NewDeckMessage{pid, DeckOptions{"strip-hr", "one", 0, [4]float64{0.5, 0.95, 0.0, 1.0}}})
+		p.newCard(NewCardMessage{"0", "0", card.Packs[0].GetCard("draw", "draw").Data})
+		p.newCard(NewCardMessage{"1", "1", card.Packs[0].GetCard("blue", "0").Data})
 	}
 }
 
@@ -108,8 +113,12 @@ func (g *Game) playerLeave(pid string) {
 // For modification: code for when a player makes a move
 // Return false if move is illegal
 func (g *Game) tryMove(player string, msg MoveCardMessage) {
-	log.Println("TryMove")
-	p := getPlayer(player)
-	p.moveCard(msg)
-	//p.moveNotOk()
+	g.game_state.Lock()
+	defer g.game_state.Unlock()
+
+	for _, pid := range g.Players {
+		if p := getPlayer(pid); p != nil {
+			p.moveCard(msg)
+		}
+	}
 }

@@ -201,17 +201,14 @@ func delGame(gid string) bool {
 }
 
 func addPublic(msg AddGameMessage) {
-	log.Println("adding public game")
 	pub_game_lock.Lock()
 	pub_game_msg.Games = append(pub_game_msg.Games, msg)
 	pub_game_lock.Unlock()
-	log.Println("sending message")
 	player_lock.Lock()
 	for _, p := range player_ml {
 		p.as.trySend(SendMessage{"lobby", SendMessage{"addGame", msg}})
 	}
 	player_lock.Unlock()
-	log.Println("done")
 }
 
 func delPublic(id string) {
@@ -226,7 +223,7 @@ func delPublic(id string) {
 	pub_game_lock.Unlock()
 	player_lock.Lock()
 	for _, p := range player_ml {
-		p.as.trySend(SendMessage{"lobby", SendMessage{"delGame", id}})
+		p.as.trySend(SendMessage{"lobby", SendMessage{"deleteGame", id}})
 	}
 	player_lock.Unlock()
 }
