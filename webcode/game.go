@@ -85,8 +85,10 @@ func (g *Game) playerCanJoin(pid string, password string) bool {
 func (g *Game) setupUI(pid string) {
 	if p := getPlayer(pid); p != nil {
 		p.newDeck(NewDeckMessage{"0", DeckOptions{"stack", "one", 0, [4]float64{0.05, 0.05, 0.0, 1.0}}})
+		p.newDeck(NewDeckMessage{"turn", DeckOptions{"stack", "one", 0, [4]float64{0.5, 0.05, 0.0, 1.0}}})
 		p.newDeck(NewDeckMessage{"1", DeckOptions{"stack", "one", 0, [4]float64{0.95, 0.05, 0.0, 1.0}}})
 		p.newDeck(NewDeckMessage{pid, DeckOptions{"strip-hr", "one", 0, [4]float64{0.5, 0.95, 0.0, 1.0}}})
+		p.newCard(NewCardMessage{"turn", "turn", card.Packs[0].GetCard("red", "0").Data})
 		p.newCard(NewCardMessage{"0", "0", card.Packs[0].GetCard("draw", "draw").Data})
 		p.newCard(NewCardMessage{"1", "1", card.Packs[0].GetCard("blue", "0").Data})
 	}
@@ -104,6 +106,10 @@ func (g *Game) playerJoin(pid string) {
 		return
 	}
 	g.Players = append(g.Players, pid)
+	if len(g.Players) == 1 {
+		p.replaceCard(SwapCardMessage{"turn", "turn", card.Packs[0].GetCard("green", "0").Data})
+		g.turn = pid
+	}
 	g.Decks[pid] = []int{}
 }
 
@@ -201,5 +207,11 @@ func (g *Game) tryMove(player string, msg MoveCardMessage) {
 		g.NCID = g.NCID + 1
 	}
 
+	if p := getPlayer(g.turn); p != nil {
+		p.replaceCard(SwapCardMessage{"turn", "turn", card.Packs[0].GetCard("red", "0").Data})
+	}
 	g.nextTurn()
+	if p := getPlayer(g.turn); p != nil {
+		p.replaceCard(SwapCardMessage{"turn", "turn", card.Packs[0].GetCard("green", "0").Data})
+	}
 }
