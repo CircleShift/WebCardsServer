@@ -107,7 +107,9 @@ func (g *Game) playerJoin(pid string) {
 	}
 	g.Players = append(g.Players, pid)
 	if len(g.Players) == 1 {
-		p.replaceCard(SwapCardMessage{"turn", "turn", card.Packs[0].GetCard("green", "0").Data})
+		if p := getPlayer(pid); p != nil {
+			p.replaceCard(SwapCardMessage{"turn", "turn", card.Packs[0].GetCard("green", "0").Data})
+		}
 		g.turn = pid
 	}
 	g.Decks[pid] = []int{}
