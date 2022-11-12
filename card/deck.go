@@ -13,7 +13,7 @@ type Deck struct {
 
 	r *rand.Rand
 
-	duplicates uint
+	duplicates int
 	suits      []string
 	cardCt     int
 }
@@ -22,7 +22,7 @@ type Deck struct {
 // packs sets the packs that are included in the deck.
 // dups sets how many of the same card can be in play at once (-1 for infinite).
 // The Rand is initialized with a source dependent on the current time.
-func NewDeck(packs [](*Pack), dups uint) *Deck {
+func NewDeck(packs [](*Pack), dups int) *Deck {
 	ct := int(0)
 
 	for i := range packs {

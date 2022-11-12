@@ -8,13 +8,13 @@ type Ref struct {
 }
 
 // GetCard returns a copy of the card that r points to.
-func (r *Ref) GetCard() Card {
+func (r Ref) GetCard() Card {
 	return r.P.Suits[r.Suit][r.CardID]
 }
 
 // GetSuit returns a copy of the suit that r points to.
 // Use sparingly as the copy required can be an expensive operation.
-func (r *Ref) GetSuit() []Card {
+func (r Ref) GetSuit() []Card {
 	return r.P.Suits[r.Suit]
 }
 
