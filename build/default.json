@@ -77,7 +77,7 @@
 			{"name": "skip", "data": {"style": {"background-color": "black"}, "all": [{"type": "image", "image": "assets/nou/skip.svg"}]}}
 		],
 		"draw": [
-			{"name": "draw", "data": {"style": {"background-color": "black", "color":"white", "font-size": "24px"}, "all": [{"type": "image", "image": "assets/nou/set-color.svg"}], "botm": [{"type": "text", "text": "No, U"}]}}
+			{"name": "draw", "data": {"style": {"background-color": "black", "color":"white", "font-size": "24px"}, "all": [{"type": "image", "image": "assets/nou/set-color.svg"}], "topr": [{"type": "text", "text": "No, U"}], "botl": [{"type": "text", "text": "No, U"}]}}
 		]
 	}
 }

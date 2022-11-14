@@ -86,19 +86,19 @@ type NewDeckMessage struct {
 }
 
 type NewCardMessage struct {
-	CardID string `json:"id"`
+	CardID int `json:"id"`
 	DeckID string `json:"deck"`
 	Data interface{} `json:"data"`
 }
 
 type MoveCardMessage struct {
-	CardID string `json:"card"`
+	CardID int `json:"card"`
 	DeckID string `json:"deck"`
 	Index int `json:"index"`
 }
 
 type SwapCardMessage struct {
-	CardID string `json:"card"`
-	NewID string `json:"id"`
+	CardID int `json:"card"`
+	NewID int `json:"id"`
 	Data interface{} `json:"data"`
 }

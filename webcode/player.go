@@ -104,7 +104,7 @@ func (p *Player) newCard(c NewCardMessage) {
 	p.as.trySend(SendMessage{"game", SendMessage{"newCard", c}})
 }
 
-func (p *Player) deleteCard(id string) {
+func (p *Player) deleteCard(id int) {
 	p.as.trySend(SendMessage{"game", SendMessage{"deleteCard", id}})
 }
 
