@@ -90,8 +90,8 @@ func (g *Game) setupUI(pid string) {
 		p.newDeck(NewDeckMessage{"turn", DeckOptions{"stack", "one", 0, [4]float64{0.5, 0.05, 0.0, 1.0}}})
 		p.newDeck(NewDeckMessage{"1", DeckOptions{"stack", "one", 0, [4]float64{0.95, 0.05, 0.0, 1.0}}})
 		p.newDeck(NewDeckMessage{pid, DeckOptions{"strip-hr", "one", 0, [4]float64{0.5, 0.95, 0.0, 1.0}}})
-		p.newCard(NewCardMessage{2, "turn", card.Packs[0].GetCard("red", "0").Data})
-		p.newCard(NewCardMessage{0, "0", card.Packs[0].GetCard("draw", "draw").Data})
+		p.newCard(NewCardMessage{2, "turn", card.Packs[0].GetCard("ui", "turn-n").Data})
+		p.newCard(NewCardMessage{0, "0", card.Packs[0].GetCard("ui", "draw").Data})
 		p.newCard(NewCardMessage{1, "1", g.TopCard().GetCard().Data})
 	}
 }
@@ -110,7 +110,7 @@ func (g *Game) playerJoin(pid string) {
 	g.Players = append(g.Players, pid)
 	if len(g.Players) == 1 {
 		if p := getPlayer(pid); p != nil {
-			p.replaceCard(SwapCardMessage{2, 2, card.Packs[0].GetCard("green", "0").Data})
+			p.replaceCard(SwapCardMessage{2, 2, card.Packs[0].GetCard("ui", "turn-y").Data})
 		}
 		g.turn = pid
 	}
@@ -257,7 +257,7 @@ func (g *Game) tryMove(player string, msg MoveCardMessage) {
 		if p := getPlayer(player); p != nil {
 			p.moveCard(MoveCardMessage{0, player, 0})
 			p.replaceCard(SwapCardMessage{0, g.NCID, c.GetCard().Data})
-			p.newCard(NewCardMessage{0, "0", card.Packs[0].GetCard("draw", "draw").Data})
+			p.newCard(NewCardMessage{0, "0", card.Packs[0].GetCard("ui", "draw").Data})
 		}
 
 		g.NCID = g.NCID + 1
@@ -266,10 +266,10 @@ func (g *Game) tryMove(player string, msg MoveCardMessage) {
 	}
 
 	if p := getPlayer(g.turn); p != nil {
-		p.replaceCard(SwapCardMessage{2, 2, card.Packs[0].GetCard("red", "0").Data})
+		p.replaceCard(SwapCardMessage{2, 2, card.Packs[0].GetCard("ui", "turn-n").Data})
 	}
 	g.nextTurn()
 	if p := getPlayer(g.turn); p != nil {
-		p.replaceCard(SwapCardMessage{2, 2, card.Packs[0].GetCard("green", "0").Data})
+		p.replaceCard(SwapCardMessage{2, 2, card.Packs[0].GetCard("ui", "turn-y").Data})
 	}
 }
