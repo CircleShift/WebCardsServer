@@ -121,6 +121,21 @@ func (d *Deck) GetRandomCard(chance float64) Ref {
 	}
 }
 
+func (d *Deck) GetRandomCardByMap(chances map[string]float64) Ref {
+	var ref Ref
+	for {
+		for s, c := range chances {
+			for _, p := range d.Packs {
+				ref = p.GetRandomCardInSuit(d.r, s, c)
+
+				if ref != NilRef {
+					return ref
+				}
+			}
+		}
+	}
+}
+
 // GetCardInSuitChance returns a chance value such that the GetRandomCard funcation has a good chance of outputing a card.
 // Returns -1 if no suit with name exists.
 // This function is expensive and should be used sparingly.
@@ -129,7 +144,7 @@ func (d *Deck) GetCardInSuitChance(name string) float64 {
 	if i < 1 {
 		return -1
 	}
-	return 1 / float64(i)
+	return 1.0 / float64(i)
 }
 
 // GetRandomCardInSuit gets a random card in the specified suit.

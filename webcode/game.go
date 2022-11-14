@@ -161,12 +161,27 @@ func (g *Game) nextTurn() {
 	g.turn = g.Players[0]
 }
 
+var mapA = map[string]float64{
+	"red": 0.016,
+	"yellow": 0.016,
+	"green": 0.016,
+	"blue": 0.016,
+}
+
+var mapB = map[string]float64{
+	"red": 0.016,
+	"yellow": 0.016,
+	"green": 0.016,
+	"blue": 0.016,
+	"wild": 0.08,
+}
+
 func (g *Game) newRandomCard(s bool) int {
 	if s {
-		g.Cards[1] = g.CardPool.GetRandomCard(g.CardPool.GetCardChance())
+		g.Cards[1] = g.CardPool.GetRandomCardByMap(mapA)
 		return 1
 	}
-	g.Cards[g.NCID] = g.CardPool.GetRandomCard(g.CardPool.GetCardChance())
+	g.Cards[g.NCID] = g.CardPool.GetRandomCardByMap(mapB)
 	g.NCID = g.NCID + 1
 	return g.NCID - 1
 }
@@ -192,7 +207,6 @@ func (g *Game) CurrentDeck(cid int) (string, int) {
 
 // Should only be called from functions that have state lock
 func (g *Game) ReturnCard(cid int, pid string) {
-	log.Println("Returning card...")
 	d, i := g.CurrentDeck(cid)
 	if p := getPlayer(pid); p != nil {
 		p.moveCard(MoveCardMessage{cid, d, i})
@@ -206,8 +220,6 @@ func (g *Game) TopCard() card.Ref {
 func (g *Game) CanPlay(cid int) bool {
 	top := g.TopCard()
 	chk := g.Cards[cid]
-	log.Println(chk.Suit, top.Suit)
-	log.Println(chk.GetCard().Name, top.GetCard().Name)
 	return chk.Suit == top.Suit || chk.GetCard().Name == top.GetCard().Name || chk.Suit == "wild"
 }
 
