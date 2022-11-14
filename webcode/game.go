@@ -260,19 +260,16 @@ func (g *Game) tryMove(player string, msg MoveCardMessage) {
 		g.Decks["1"] = append(g.Decks["1"][1:], msg.CardID)
 		delete(g.Cards, d)
 	} else if msg.CardID == 0 {
-		c := g.CardPool.GetRandomCard(g.CardPool.GetCardChance())
+		c := g.newRandomCard(false)
 
-		log.Println(g.NCID)
-		g.Decks[player] = append(g.Decks[player], g.NCID)
-		g.Cards[g.NCID] = c
+		g.Decks[player] = append(g.Decks[player], c)
 
 		if p := getPlayer(player); p != nil {
 			p.moveCard(MoveCardMessage{0, player, 0})
-			p.replaceCard(SwapCardMessage{0, g.NCID, c.GetCard().Data})
+			p.replaceCard(SwapCardMessage{0, c, g.Cards[c].GetCard().Data})
 			p.newCard(NewCardMessage{0, "0", card.Packs[0].GetCard("ui", "draw").Data})
 		}
 
-		g.NCID = g.NCID + 1
 	} else {
 		g.ReturnCard(msg.CardID, player)
 	}
